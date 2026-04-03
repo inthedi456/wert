@@ -117,7 +117,8 @@
         <h3 class="font-bold text-gray-700 mb-3 pl-2"><i class="fa-solid fa-link text-accent mr-2"></i>전공 심화 추천 자료 (클릭)</h3>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6">
              <!-- 전공 관련 사이트 1: 농사로 -->
-             <button onclick="window.open('https://www.nongsaro.go.kr', '_blank')" class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 active:bg-gray-50 text-left flex items-start gap-3">
+             <!-- window.open 대신 href를 사용하거나, _self를 사용하여 iframe 내에서 열리지 않도록 우회 (모바일 브라우저 환경 고려) -->
+             <button onclick="window.open('https://www.nongsaro.go.kr', '_blank', 'noopener,noreferrer')" class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 active:bg-gray-50 text-left flex items-start gap-3">
                 <div class="bg-green-100 p-3 rounded-lg text-primary">
                     <i class="fa-solid fa-tractor text-xl"></i>
                 </div>
@@ -128,7 +129,7 @@
             </button>
             
             <!-- 전공 관련 사이트 2: RISS 논문 검색 -->
-            <button onclick="window.open('https://www.riss.kr', '_blank')" class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 active:bg-gray-50 text-left flex items-start gap-3">
+            <button onclick="window.open('https://www.riss.kr', '_blank', 'noopener,noreferrer')" class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 active:bg-gray-50 text-left flex items-start gap-3">
                 <div class="bg-blue-100 p-3 rounded-lg text-secondary">
                     <i class="fa-solid fa-magnifying-glass-chart text-xl"></i>
                 </div>
@@ -349,7 +350,7 @@
                            <li><b>전국민 AI 역량 확보:</b> 일상 및 업무에서의 AI 리터러시 강화</li>
                        </ul>
                        <div class="bg-blue-50 p-3 rounded-lg mt-3 text-xs text-blue-800">
-                           💡 <b>나의 연결점:</b> 국가가 농산업 AI 전환을 추진함에 따라, 데이터를 다룰 줄 아는 스마트 축산 전문가의 수요가 급증할 것입니다. 학과 전공 지식과 코딩/AI 역량을 결합하는 것이 핵심입니다.
+                           💡 <b>나의 연결점:</b> 국가가 농산업 AI 전환을 추진함에 따라, 데이터를 다룰 줄 아는 스마트 축산 전문가의 수요가 급증할 것입니다. 학과 전공 지식과 코딩/AI 역량을 결합하는 것이 핵심 정답입니다.
                        </div>`
             },
             curriculumDetail: {
