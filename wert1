@@ -2,466 +2,516 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>경상국립대 축산과학부 AX 커리어 플랫폼</title>
-    
-    <!-- 1. 가장 안정적인 외부 라이브러리 (404 에러 방지) -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>나만의 AI 행동계획 | 스마트 축산</title>
+    <!-- 구글 폰트 적용 (Noto Sans KR) -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome 아이콘 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
-
-    <style>
-        body { 
-            font-family: 'Noto Sans KR', sans-serif; 
-            background-color: #f1f5f9; 
-            color: #0f172a;
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#2E7D32', // 녹색
+                        secondary: '#1565C0', // 파란색
+                        accent: '#F59E0B', // 강조 주황색
+                        bgMain: '#f3f4f6',
+                    },
+                    fontFamily: { sans: ['Noto Sans KR', 'sans-serif'], }
+                }
+            }
         }
-        .gnu-blue { color: #004ea2; }
-        .gnu-bg { background-color: #004ea2; }
+    </script>
+    <style>
+        body { background-color: theme('colors.bgMain'); -webkit-tap-highlight-color: transparent; }
         
-        /* 스크롤바 디자인 */
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-        ::-webkit-scrollbar-track { background: transparent; }
+        /* 다중 페이지 전환 애니메이션 */
+        .page {
+            display: none;
+            animation: fadeIn 0.3s ease-in-out;
+            padding-bottom: 90px; /* 하단 네비게이션 바 공간 확보 */
+        }
+        .page.active { display: block; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
 
-        /* 탭 & 애니메이션 */
-        .tab-content { display: none; animation: fadeIn 0.4s ease-in-out; }
-        .tab-content.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        
-        .nav-btn.active { background-color: #004ea2; color: white; border-color: #004ea2; }
-        .nav-btn.active i { color: white; }
+        /* 하단 네비게이션 바 (모바일 앱 스타일) */
+        .bottom-nav {
+            position: fixed; bottom: 0; left: 0; right: 0;
+            background: white; border-top: 1px solid #e5e7eb;
+            display: flex; justify-content: space-around;
+            padding: 0.5rem 0; z-index: 50;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+            padding-bottom: env(safe-area-inset-bottom); /* 아이폰 하단 바 대응 */
+        }
+        .nav-item {
+            display: flex; flex-direction: column; align-items: center;
+            color: #9ca3af; font-size: 0.7rem; padding: 0.5rem; transition: color 0.2s;
+        }
+        .nav-item i { font-size: 1.2rem; margin-bottom: 0.2rem; }
+        .nav-item.active { color: #2E7D32; font-weight: 700; }
+
+        /* 클릭 가능한 텍스트 효과 */
+        .clickable-text {
+            color: #1565C0; font-weight: bold; text-decoration: underline; text-underline-offset: 4px; decoration-color: rgba(21, 101, 192, 0.3); cursor: pointer;
+        }
+
+        /* 모달 팝업 스타일 */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5); backdrop-filter: blur(2px);
+            display: none; align-items: center; justify-content: center; z-index: 100;
+            opacity: 0; transition: opacity 0.3s;
+        }
+        .modal-overlay.active { display: flex; opacity: 1; }
+        .modal-content {
+            background: white; width: 90%; max-width: 400px; border-radius: 1rem;
+            padding: 1.5rem; transform: scale(0.9); transition: transform 0.3s;
+            max-height: 80vh; overflow-y: auto;
+        }
+        .modal-overlay.active .modal-content { transform: scale(1); }
+
+        /* 체크리스트 커스텀 */
+        input[type="checkbox"] { width: 1.3em; height: 1.3em; accent-color: #2E7D32; }
+        .todo-item.completed { opacity: 0.5; }
+        .todo-item.completed .task-text { text-decoration: line-through; }
     </style>
 </head>
-<body class="h-screen flex flex-col md:flex-row overflow-hidden">
+<body class="antialiased">
 
-    <!-- 모바일 헤더 (모바일에서만 보임) -->
-    <header class="md:hidden bg-white p-4 border-b border-slate-200 flex items-center justify-between shrink-0">
-        <div class="flex items-center gap-2">
-            <div class="w-8 h-8 gnu-bg rounded-lg flex items-center justify-center text-white font-bold"><i class="fa-solid fa-cow"></i></div>
-            <h1 class="font-black text-lg tracking-tight">GNU AX Path</h1>
-        </div>
-        <div class="text-xs font-bold text-slate-500">축산과학부</div>
+    <!-- 상단 헤더 -->
+    <header class="bg-gradient-to-r from-primary to-secondary text-white py-6 px-4 shadow-md rounded-b-2xl sticky top-0 z-40">
+        <h1 class="text-xl font-bold text-center">나만의 AI 행동계획 로드맵</h1>
+        <p class="text-xs text-center mt-1 text-white/80">경상국립대 축산과학부 기반 포트폴리오</p>
     </header>
 
-    <!-- 사이드바 네비게이션 (PC에서는 좌측, 모바일에서는 하단) -->
-    <nav class="bg-white border-t md:border-t-0 md:border-r border-slate-200 w-full md:w-64 shrink-0 flex flex-row md:flex-col justify-between md:justify-start order-last md:order-first z-50">
+    <!-- [페이지 1] 메인 대시보드 -->
+    <main id="page-home" class="page active px-4 py-6 max-w-2xl mx-auto">
+        <!-- 프로필 섹션 -->
+        <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 mb-6 flex items-center gap-4">
+            <div class="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center text-primary text-2xl">
+                <i class="fa-solid fa-seedling"></i>
+            </div>
+            <div>
+                <h2 class="text-lg font-bold text-gray-800">축산과학부 신입생</h2>
+                <p class="text-sm text-gray-500">2026학번 | 목표: 130학점 이수</p>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 mb-6 relative overflow-hidden">
+             <div class="absolute top-0 right-0 p-4 opacity-5 text-secondary">
+                 <i class="fa-solid fa-bullseye text-6xl"></i>
+             </div>
+            <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded font-bold mb-3 inline-block">Vision Statement</span>
+            <h2 class="text-xl font-bold text-gray-800 mb-2">스마트 축산 데이터 & AI 융합 전문가</h2>
+            <p class="text-sm text-gray-600 leading-relaxed mb-4">
+                국가의 <span class="clickable-text" onclick="openModal('nationalAI')">인공지능 행동계획</span>에 발맞춰, 단순 사육을 넘어 <b>데이터 기반의 생산성 극대화 및 탄소 저감</b>을 이끄는 미래형 축산 인재가 되겠습니다. 우리 학과의 체계적인 커리큘럼을 통해 농업 현장의 문제를 AI로 해결하는 실무 능력을 갖추겠습니다.
+            </p>
+        </div>
+
+        <h3 class="font-bold text-gray-700 mb-3 pl-2"><i class="fa-solid fa-link text-accent mr-2"></i>전공 심화 추천 자료 (클릭)</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6">
+             <!-- 전공 관련 사이트 1: 농사로 -->
+             <button onclick="window.open('https://www.nongsaro.go.kr', '_blank')" class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 active:bg-gray-50 text-left flex items-start gap-3">
+                <div class="bg-green-100 p-3 rounded-lg text-primary">
+                    <i class="fa-solid fa-tractor text-xl"></i>
+                </div>
+                <div>
+                    <h4 class="font-bold text-sm text-gray-800">농촌진흥청 농사로</h4>
+                    <p class="text-xs text-gray-500 mt-1">국내 최대 축산 기술 및 스마트팜 생육 데이터 포털</p>
+                </div>
+            </button>
+            
+            <!-- 전공 관련 사이트 2: RISS 논문 검색 -->
+            <button onclick="window.open('https://www.riss.kr', '_blank')" class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 active:bg-gray-50 text-left flex items-start gap-3">
+                <div class="bg-blue-100 p-3 rounded-lg text-secondary">
+                    <i class="fa-solid fa-magnifying-glass-chart text-xl"></i>
+                </div>
+                <div>
+                    <h4 class="font-bold text-sm text-gray-800">RISS 학술연구정보</h4>
+                    <p class="text-xs text-gray-500 mt-1">'축산 인공지능', '가축 질병 예측' 관련 최신 논문 검색</p>
+                </div>
+            </button>
+
+             <button onclick="openModal('curriculumDetail')" class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 active:bg-gray-50 text-left flex items-start gap-3 md:col-span-2">
+                <div class="bg-accent/10 p-3 rounded-lg text-accent">
+                    <i class="fa-solid fa-graduation-cap text-xl"></i>
+                </div>
+                <div>
+                    <h4 class="font-bold text-sm text-gray-800">축산생명학과 졸업 요건 분석표</h4>
+                    <p class="text-xs text-gray-500 mt-1">130학점 달성을 위한 전공(42), 필수교양(6), 교직 이수 체계도</p>
+                </div>
+            </button>
+        </div>
+    </main>
+
+    <!-- [페이지 2] 상세 로드맵 (교육과정 기반) -->
+    <main id="page-roadmap" class="page px-4 py-6 max-w-2xl mx-auto">
+        <div class="flex flex-col gap-2 mb-6">
+             <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                 <h2 class="text-xl font-bold text-gray-800 mb-1">4년 실천 로드맵</h2>
+                 <p class="text-sm text-gray-600 mb-2">총 130학점 이수 마스터플랜 (전공 42학점 이상 필수)</p>
+                 <div class="flex gap-2">
+                     <button onclick="openModal('eduInfo')" class="text-xs bg-indigo-50 text-indigo-700 px-3 py-1.5 rounded-full font-medium border border-indigo-100 flex items-center gap-1"><i class="fa-solid fa-chalkboard-user"></i> 교직이론 안내</button>
+                     <button onclick="openModal('aiPractice')" class="text-xs bg-green-50 text-green-700 px-3 py-1.5 rounded-full font-medium border border-green-100 flex items-center gap-1"><i class="fa-solid fa-laptop-code"></i> AI 역량 연계</button>
+                 </div>
+             </div>
+        </div>
+
+        <div class="space-y-5 relative">
+            <!-- 1학년 -->
+            <div class="bg-white rounded-xl p-5 border-l-4 border-primary shadow-sm relative overflow-hidden z-10">
+                <div class="flex justify-between items-center mb-3 border-b border-gray-100 pb-2">
+                    <h3 class="font-bold text-lg text-primary"><i class="fa-solid fa-1 mr-2"></i>학년 (기초/탐색)</h3>
+                    <span class="text-xs bg-primary/10 text-primary px-3 py-1 rounded-full font-bold animate-pulse">현재 진행중</span>
+                </div>
+                <div class="space-y-4 mt-3">
+                    <div>
+                        <h4 class="text-sm font-bold text-gray-700 mb-1"><i class="fa-solid fa-book text-gray-400 mr-1"></i> 학업 (교양/전공기초)</h4>
+                        <ul class="text-sm text-gray-600 space-y-1.5 pl-5 list-disc marker:text-gray-300">
+                            <li><b class="text-gray-800">필수교양:</b> 대학영어 1, 2 이수 (총 4학점) - <i>글로벌 농업 AI 논문 독해력 배양</i></li>
+                            <li><b class="text-gray-800">역량/기초:</b> 컴퓨팅사고와 코딩 이수 - <i>파이썬 프로그래밍 기초 체득</i></li>
+                            <li><b class="text-gray-800">교직(이론):</b> 교육학개론(2학점, 1학기) 수강 시작</li>
+                        </ul>
+                    </div>
+                     <div>
+                        <h4 class="text-sm font-bold text-gray-700 mb-1"><i class="fa-solid fa-rocket text-gray-400 mr-1"></i> AI 행동계획 (실천)</h4>
+                        <div class="bg-gray-50 p-3 rounded-lg text-xs border border-gray-100 text-gray-600">
+                            <b>🎯 핵심 미션:</b> '농사로' 포털에서 <span class="clickable-text" onclick="openModal('smartFarm')">스마트팜 환경 데이터</span> 검색 및 다운로드해보기. 코딩 수업에서 배운 내용으로 간단한 데이터 정렬 시도하기.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2학년 -->
+            <div class="bg-white rounded-xl p-5 border-l-4 border-secondary shadow-sm z-10 relative">
+                <div class="flex justify-between items-center mb-3 border-b border-gray-100 pb-2">
+                     <h3 class="font-bold text-lg text-secondary"><i class="fa-solid fa-2 mr-2"></i>학년 (전공/응용)</h3>
+                </div>
+                <div class="space-y-4 mt-3">
+                    <div>
+                        <h4 class="text-sm font-bold text-gray-700 mb-1"><i class="fa-solid fa-microscope text-gray-400 mr-1"></i> 학업 (전공 진입)</h4>
+                        <ul class="text-sm text-gray-600 space-y-1.5 pl-5 list-disc marker:text-gray-300">
+                            <li><b class="text-gray-800">전공핵심:</b> 축산생명학과 전공 본격 진입 (동물영양학, 가축육종학 등 필수과목 공략)</li>
+                            <li><b class="text-gray-800">교직(이론):</b> 교육심리(1학기), 교육사회(2학기) 이수 (각 2학점)</li>
+                        </ul>
+                    </div>
+                     <div>
+                        <h4 class="text-sm font-bold text-gray-700 mb-1"><i class="fa-solid fa-rocket text-gray-400 mr-1"></i> AI 행동계획 (실천)</h4>
+                         <div class="bg-gray-50 p-3 rounded-lg text-xs border border-gray-100 text-gray-600">
+                            전공 이론(예: 동물영양학 사료 배합 비율)에 데이터를 접목해보고, 국가 <b>'인공지능 행동계획'</b>의 산업 대전환 트렌드에 맞춘 미니 레포트 작성하기.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3학년 -->
+            <div class="bg-white rounded-xl p-5 border-l-4 border-indigo-500 shadow-sm z-10 relative">
+                 <div class="flex justify-between items-center mb-3 border-b border-gray-100 pb-2">
+                     <h3 class="font-bold text-lg text-indigo-500"><i class="fa-solid fa-3 mr-2"></i>학년 (심화/프로젝트)</h3>
+                </div>
+                 <div class="space-y-4 mt-3">
+                    <div>
+                        <h4 class="text-sm font-bold text-gray-700 mb-1"><i class="fa-solid fa-flask text-gray-400 mr-1"></i> 학업 (전공 심화)</h4>
+                        <ul class="text-sm text-gray-600 space-y-1.5 pl-5 list-disc marker:text-gray-300">
+                            <li><b class="text-gray-800">전공심화:</b> 데이터 기반 축사 환경 제어, 질병 관리 등 융합 과목 수강</li>
+                            <li><b class="text-gray-800">교직(이론):</b> 교육과정 및 교육평가(1학기), 교육방법 및 교육공학(2학기) 이수</li>
+                        </ul>
+                    </div>
+                     <div>
+                        <h4 class="text-sm font-bold text-gray-700 mb-1"><i class="fa-solid fa-rocket text-gray-400 mr-1"></i> AI 행동계획 (실천)</h4>
+                         <div class="bg-gray-50 p-3 rounded-lg text-xs border border-gray-100 text-gray-600">
+                            교내 학술제 또는 창업 공모전에 <b>'RISS 논문을 참고한 AI 가축 질병 조기 예측 모델'</b> 기획안 출품하기.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4학년 -->
+            <div class="bg-white rounded-xl p-5 border-l-4 border-accent shadow-sm z-10 relative">
+                <div class="flex justify-between items-center mb-3 border-b border-gray-100 pb-2">
+                     <h3 class="font-bold text-lg text-accent"><i class="fa-solid fa-4 mr-2"></i>학년 (완성/현장)</h3>
+                </div>
+                <div class="space-y-4 mt-3">
+                    <div>
+                        <h4 class="text-sm font-bold text-gray-700 mb-1"><i class="fa-solid fa-award text-gray-400 mr-1"></i> 학업 (졸업 요건 완성)</h4>
+                        <ul class="text-sm text-gray-600 space-y-1.5 pl-5 list-disc marker:text-gray-300">
+                            <li><b class="text-gray-800">학점점검:</b> 총 130학점 달성 (전공 42점 이상, 교직이론 12점 이상) 최종 점검</li>
+                            <li><b class="text-gray-800">교직(실무):</b> 교육실습 및 학교현장실습 (4학점 이상) 완료</li>
+                        </ul>
+                    </div>
+                     <div>
+                        <h4 class="text-sm font-bold text-gray-700 mb-1"><i class="fa-solid fa-rocket text-gray-400 mr-1"></i> AI 행동계획 (실천)</h4>
+                         <div class="bg-gray-50 p-3 rounded-lg text-xs border border-gray-100 text-gray-600">
+                            애그리테크(Agri-tech) 기업 현장 실습 참여 및, 학기 중 축적한 데이터를 바탕으로 <b>'스마트 축산 AI 융합 졸업 논문/포트폴리오'</b> 완성 및 제출.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 로드맵 마무리 (여백 및 시각적 안정감 제공) -->
+            <div class="flex flex-col items-center justify-center text-center mt-6 pb-16 z-0">
+                <div class="h-12 border-l-2 border-dashed border-gray-300 mb-4"></div>
+                <div class="w-16 h-16 bg-gradient-to-tr from-accent to-yellow-400 rounded-full flex items-center justify-center text-white text-3xl shadow-lg mb-3">
+                    <i class="fa-solid fa-user-graduate"></i>
+                </div>
+                <h3 class="text-xl font-bold text-gray-800">130학점 이수 및 졸업!</h3>
+                <p class="text-sm text-gray-500 mt-2 bg-white px-4 py-2 rounded-full shadow-sm border border-gray-100">
+                    🎉 대한민국 스마트 축산을 이끌 AI 전문가
+                </p>
+            </div>
+        </div>
+    </main>
+
+    <!-- [페이지 3] 데일리 체크리스트 -->
+    <main id="page-checklist" class="page px-4 py-6 max-w-2xl mx-auto">
+        <h2 class="text-2xl font-bold text-gray-800 mb-2">데일리 실천 체크리스트</h2>
+        <p class="text-xs text-gray-500 mb-5">오늘 해야 할 학업 및 AI 역량 강화 목표를 관리하세요.</p>
         
-        <!-- PC 로고 영역 -->
-        <div class="hidden md:block p-6 border-b border-slate-100">
-            <div class="flex items-center gap-3 mb-2">
-                <div class="w-12 h-12 gnu-bg rounded-xl flex items-center justify-center text-white text-xl shadow-lg">
-                    <i class="fa-solid fa-cow"></i>
-                </div>
-                <div>
-                    <h1 class="text-xl font-black tracking-tight">GNU AX Path</h1>
-                    <p class="text-[10px] font-bold text-blue-600 uppercase">Career Navigator</p>
-                </div>
-            </div>
-            <p class="text-xs text-slate-500 font-medium mt-3">경상국립대 축산과학부<br>맞춤형 커리어/창업 설계</p>
+        <!-- 빠른 추가 버튼 영역 -->
+        <div class="mb-4 flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+            <button onclick="addQuickTask('대학영어 단어장 암기')" class="shrink-0 text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-full transition">+ 영어단어</button>
+            <button onclick="addQuickTask('코딩 수업 내용 복습')" class="shrink-0 text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-full transition">+ 코딩복습</button>
+            <button onclick="addQuickTask('농사로 포털 방문해보기')" class="shrink-0 text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-full transition">+ 농사로 방문</button>
         </div>
 
-        <!-- 메뉴 버튼 -->
-        <div class="flex flex-row md:flex-col w-full p-2 md:p-4 gap-1 md:gap-2">
-            <button onclick="changeTab('roadmap')" id="btn-roadmap" class="nav-btn active flex-1 md:w-full flex md:flex-row flex-col items-center gap-1 md:gap-3 px-2 md:px-4 py-3 md:py-4 rounded-xl text-xs md:text-sm font-bold text-slate-500 hover:bg-slate-50 transition-all border border-transparent">
-                <i class="fa-solid fa-map-location-dot text-lg md:text-base text-slate-400"></i>
-                <span>4개년 로드맵</span>
-            </button>
-            <button onclick="changeTab('startup')" id="btn-startup" class="nav-btn flex-1 md:w-full flex md:flex-row flex-col items-center gap-1 md:gap-3 px-2 md:px-4 py-3 md:py-4 rounded-xl text-xs md:text-sm font-bold text-slate-500 hover:bg-slate-50 transition-all border border-transparent">
-                <i class="fa-solid fa-lightbulb text-lg md:text-base text-slate-400"></i>
-                <span>창업 모델(BM)</span>
-            </button>
-            <button onclick="changeTab('analysis')" id="btn-analysis" class="nav-btn flex-1 md:w-full flex md:flex-row flex-col items-center gap-1 md:gap-3 px-2 md:px-4 py-3 md:py-4 rounded-xl text-xs md:text-sm font-bold text-slate-500 hover:bg-slate-50 transition-all border border-transparent">
-                <i class="fa-solid fa-laptop-medical text-lg md:text-base text-slate-400"></i>
-                <span>AI 실무 진단</span>
-            </button>
+        <div class="flex gap-2 mb-6 shadow-sm">
+            <input type="text" id="taskInput" class="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary text-sm transition" placeholder="직접 목표를 입력하세요...">
+            <button onclick="addTask()" class="bg-primary text-white px-5 py-3 rounded-xl font-bold shadow-md active:bg-green-800 transition"><i class="fa-solid fa-plus"></i></button>
         </div>
+        
+        <ul id="todoList" class="space-y-3">
+            <!-- 자바스크립트로 리스트 추가됨 -->
+        </ul>
+        
+        <div id="emptyState" class="hidden flex-col items-center justify-center py-10 text-gray-400 bg-white rounded-xl border border-dashed border-gray-300 mt-4">
+            <i class="fa-regular fa-calendar-check text-4xl mb-3 text-gray-300"></i>
+            <p class="text-sm">오늘의 실천 목표가 없습니다.</p>
+            <p class="text-xs mt-1">상단의 퀵 버튼을 눌러 목표를 추가해보세요!</p>
+        </div>
+    </main>
 
-        <!-- 하단 유저 정보 (PC에서만 보임) -->
-        <div class="hidden md:block mt-auto p-6 bg-slate-50 border-t border-slate-100">
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center text-slate-500 font-bold">나</div>
-                <div>
-                    <p class="text-sm font-bold text-slate-800">질문자님</p>
-                    <p class="text-xs text-blue-600 font-bold">학부 1학년 진행중</p>
-                </div>
-            </div>
+    <!-- 하단 네비게이션 탭 -->
+    <nav class="bottom-nav">
+        <div class="nav-item active" onclick="switchPage('page-home', this)">
+            <i class="fa-solid fa-house"></i>
+            <span>홈</span>
+        </div>
+        <div class="nav-item" onclick="switchPage('page-roadmap', this)">
+            <i class="fa-solid fa-map-location-dot"></i>
+            <span>로드맵</span>
+        </div>
+        <div class="nav-item" onclick="switchPage('page-checklist', this)">
+            <i class="fa-solid fa-list-check"></i>
+            <span>체크리스트</span>
         </div>
     </nav>
 
-    <!-- 메인 콘텐츠 영역 -->
-    <main class="flex-1 overflow-y-auto p-4 md:p-8 bg-slate-50 pb-24 md:pb-8">
-        
-        <!-- ==========================================
-             1. 교육 로드맵 탭
-        ========================================== -->
-        <section id="tab-roadmap" class="tab-content active max-w-6xl mx-auto">
-            <header class="mb-6 md:mb-8">
-                <h2 class="text-2xl font-black text-slate-900 mb-2">AX 융합 4개년 교육 로드맵</h2>
-                <p class="text-sm text-slate-500">축산 전공 지식과 AI/데이터(AX) 기술을 결합한 학년별 커리어 성장 경로입니다.</p>
-            </header>
-
-            <!-- 학년 선택 버튼 -->
-            <div class="grid grid-cols-4 gap-2 md:gap-4 mb-6 md:mb-8">
-                <button onclick="updateYear(1)" id="year-btn-1" class="year-btn bg-white border-2 border-blue-600 rounded-2xl p-3 md:p-5 text-center shadow-md transition-all">
-                    <span class="block text-[10px] md:text-xs font-black text-blue-600 mb-1">1학년</span>
-                    <span class="block font-black text-sm md:text-lg text-slate-900">탐색</span>
-                </button>
-                <button onclick="updateYear(2)" id="year-btn-2" class="year-btn bg-white border border-slate-200 rounded-2xl p-3 md:p-5 text-center hover:border-blue-300 transition-all">
-                    <span class="block text-[10px] md:text-xs font-black text-slate-400 mb-1">2학년</span>
-                    <span class="block font-black text-sm md:text-lg text-slate-500">기초</span>
-                </button>
-                <button onclick="updateYear(3)" id="year-btn-3" class="year-btn bg-white border border-slate-200 rounded-2xl p-3 md:p-5 text-center hover:border-blue-300 transition-all">
-                    <span class="block text-[10px] md:text-xs font-black text-slate-400 mb-1">3학년</span>
-                    <span class="block font-black text-sm md:text-lg text-slate-500">심화</span>
-                </button>
-                <button onclick="updateYear(4)" id="year-btn-4" class="year-btn bg-white border border-slate-200 rounded-2xl p-3 md:p-5 text-center hover:border-blue-300 transition-all">
-                    <span class="block text-[10px] md:text-xs font-black text-slate-400 mb-1">4학년</span>
-                    <span class="block font-black text-sm md:text-lg text-slate-500">도약</span>
-                </button>
+    <!-- 모달 팝업 컨테이너 -->
+    <div id="customModal" class="modal-overlay" onclick="closeModal(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="flex justify-between items-start mb-4 border-b border-gray-100 pb-3">
+                <h3 id="modalTitle" class="text-lg font-bold text-primary flex items-center gap-2"><i class="fa-solid fa-circle-info text-sm"></i> 제목</h3>
+                <button onclick="closeModal(null, true)" class="text-gray-400 p-1 hover:text-gray-600 transition"><i class="fa-solid fa-xmark text-xl"></i></button>
             </div>
-
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <!-- 교육과정 리스트 -->
-                <div class="bg-white rounded-3xl p-6 md:p-8 border border-slate-200 shadow-sm">
-                    <h3 class="text-base font-black text-slate-800 mb-6 flex items-center gap-2">
-                        <i class="fa-solid fa-book-open text-blue-600"></i> 중점 이수 과목 및 활동
-                    </h3>
-                    <div id="course-list" class="space-y-6 relative border-l-2 border-slate-100 ml-2 pl-6">
-                        <!-- JS로 동적 렌더링 -->
-                    </div>
-                </div>
-
-                <!-- 역량 레이더 차트 -->
-                <div class="bg-white rounded-3xl p-6 md:p-8 border border-slate-200 shadow-sm">
-                    <h3 class="text-base font-black text-slate-800 mb-6 flex items-center gap-2">
-                        <i class="fa-solid fa-chart-pie text-blue-600"></i> 학년별 예상 역량 지표
-                    </h3>
-                    <div class="w-full h-64 md:h-80 relative flex justify-center items-center">
-                        <canvas id="radarChart"></canvas>
-                    </div>
-                </div>
+            <div id="modalBody" class="text-sm text-gray-600 space-y-3 leading-relaxed max-h-[50vh] overflow-y-auto pr-2">
+                내용
             </div>
-        </section>
-
-        <!-- ==========================================
-             2. 창업 아이템 탭
-        ========================================== -->
-        <section id="tab-startup" class="tab-content max-w-6xl mx-auto">
-            <header class="mb-6 md:mb-8">
-                <h2 class="text-2xl font-black text-slate-900 mb-2">학습 연계 창업 비즈니스 모델</h2>
-                <p class="text-sm text-slate-500">교수님 제안을 반영하여 대학 생활과 시너지를 내는 창업 아이템 구상안입니다.</p>
-            </header>
-
-            <!-- 히어로 배너 -->
-            <div class="bg-slate-900 rounded-3xl p-8 md:p-12 text-white relative overflow-hidden shadow-xl mb-6">
-                <div class="relative z-10">
-                    <span class="px-3 py-1 bg-blue-600 text-white rounded-full text-[10px] font-black tracking-wider mb-4 inline-block">STARTUP IDEA</span>
-                    <h3 class="text-3xl md:text-4xl font-black mb-4">"GNU Livestock AX-Navigator"</h3>
-                    <p class="text-slate-300 md:text-lg leading-relaxed font-medium max-w-2xl">
-                        축산 전공 학생들의 <strong class="text-white">실습 경험과 데이터</strong>를 가치 있게 만드는 '전공 맞춤형 커리어 데이터 매니지먼트 플랫폼'.<br>
-                        학생에게는 최적의 진로를, 산업계에는 검증된 인재와 데이터를 제공합니다.
-                    </p>
-                </div>
-                <i class="fa-solid fa-rocket absolute -bottom-10 -right-10 text-[150px] md:text-[250px] text-white opacity-5"></i>
-            </div>
-
-            <!-- 핵심 BM 3가지 -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div class="bg-white p-6 md:p-8 rounded-3xl border border-slate-200 shadow-sm hover:-translate-y-1 transition-transform">
-                    <div class="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center text-xl mb-4">
-                        <i class="fa-solid fa-database"></i>
-                    </div>
-                    <h4 class="font-black text-lg mb-2">실습 데이터 뱅크</h4>
-                    <p class="text-sm text-slate-500 leading-relaxed">전공생들이 학내 농장에서 실습하며 수집한 가축 환경/생체 데이터를 익명화하여 연구소에 제공하는 데이터 허브.</p>
-                </div>
-                <div class="bg-white p-6 md:p-8 rounded-3xl border border-slate-200 shadow-sm hover:-translate-y-1 transition-transform">
-                    <div class="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center text-xl mb-4">
-                        <i class="fa-solid fa-route"></i>
-                    </div>
-                    <h4 class="font-black text-lg mb-2">맞춤형 진로 매칭</h4>
-                    <p class="text-sm text-slate-500 leading-relaxed">개인의 과목 이수 현황과 실습 숙련도(AX 역량)를 AI가 분석하여, 스마트팜 취업 및 창업의 최적 경로를 추천.</p>
-                </div>
-                <div class="bg-white p-6 md:p-8 rounded-3xl border border-slate-200 shadow-sm hover:-translate-y-1 transition-transform">
-                    <div class="w-12 h-12 bg-rose-50 text-rose-600 rounded-2xl flex items-center justify-center text-xl mb-4">
-                        <i class="fa-solid fa-users-gear"></i>
-                    </div>
-                    <h4 class="font-black text-lg mb-2">축산 AX 네트워크</h4>
-                    <p class="text-sm text-slate-500 leading-relaxed">전국 축산 관련 대학생들이 모여 스마트 축산 기술을 공유하고, 선배 창업가들과 멘토링을 맺는 커뮤니티.</p>
-                </div>
-            </div>
-        </section>
-
-        <!-- ==========================================
-             3. 실무 진단 탭 (AX 시뮬레이션)
-        ========================================== -->
-        <section id="tab-analysis" class="tab-content max-w-6xl mx-auto">
-            <header class="mb-6 md:mb-8">
-                <h2 class="text-2xl font-black text-slate-900 mb-2">가축 생체 데이터 AI 분석 (실습용)</h2>
-                <p class="text-sm text-slate-500">실제 스마트 농장에서 데이터를 수집하고 AI가 상태를 판별하는 과정을 체험합니다.</p>
-            </header>
-
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <!-- 실시간 차트 -->
-                <div class="lg:col-span-2 bg-white rounded-3xl p-6 md:p-8 border border-slate-200 shadow-sm">
-                    <div class="flex justify-between items-center mb-6">
-                        <h3 class="text-base font-black text-slate-800 flex items-center gap-2">
-                            <span class="w-2 h-2 bg-rose-500 rounded-full animate-pulse"></span> 실시간 개체 체온 변화 스트림
-                        </h3>
-                    </div>
-                    <div class="w-full h-64 md:h-80 relative">
-                        <canvas id="streamChart"></canvas>
-                    </div>
-                </div>
-
-                <!-- 입력 및 결과 패널 -->
-                <div class="flex flex-col gap-6">
-                    <div class="bg-white rounded-3xl p-6 md:p-8 border border-slate-200 shadow-sm">
-                        <h3 class="text-sm font-black text-slate-800 mb-4 flex items-center gap-2">
-                            <i class="fa-solid fa-keyboard text-blue-600"></i> 센서 데이터 입력
-                        </h3>
-                        <div class="mb-4">
-                            <label class="block text-xs font-bold text-slate-500 mb-2">개체 측정 온도 (°C)</label>
-                            <input type="number" id="temp-input" value="38.5" step="0.1" class="w-full bg-slate-50 border border-slate-200 text-slate-900 font-bold rounded-xl px-4 py-3 outline-none focus:border-blue-500 focus:bg-white transition-all text-lg">
-                        </div>
-                        <button onclick="analyzeHealth()" class="w-full gnu-bg text-white font-black rounded-xl py-3 shadow-md hover:opacity-90 active:scale-95 transition-all">
-                            AI 판별 실행
-                        </button>
-                    </div>
-
-                    <div id="status-card" class="flex-1 bg-slate-800 rounded-3xl p-6 md:p-8 text-center text-white flex flex-col justify-center items-center transition-all duration-300">
-                        <i id="status-icon" class="fa-solid fa-circle-check text-5xl text-emerald-400 mb-4"></i>
-                        <h3 id="status-title" class="text-2xl font-black text-emerald-400 mb-2">정상 상태</h3>
-                        <p id="status-desc" class="text-sm text-slate-300">현재 입력된 데이터는 가축의 정상 대사 범위 내에 있습니다.</p>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-    </main>
+            <button onclick="closeModal(null, true)" class="w-full mt-5 bg-primary text-white py-2.5 rounded-xl font-medium active:bg-green-800 transition shadow-sm">확인</button>
+        </div>
+    </div>
 
     <script>
-        // ==========================================
-        // 1. 학년별 데이터 (로드맵 & 차트용)
-        // ==========================================
-        const roadmapData = {
-            1: {
-                skills: [30, 10, 20, 15, 20],
-                courses: [
-                    { title: "전공: 축산학개론", desc: "축산업의 역사, 가치 및 미래 스마트 축산의 방향성 이해" },
-                    { title: "AX: 파이썬 코딩 입문", desc: "데이터 분석을 위한 프로그래밍 기초 및 논리적 사고력 배양" },
-                    { title: "활동: 학과 소모임 가입", desc: "전공 관련 동아리 활동을 통한 기초 실무 경험 및 네트워킹" }
-                ]
+        // --- 1. 페이지 전환 (SPA) 로직 ---
+        function switchPage(pageId, navElement) {
+            document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+            
+            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+            navElement.classList.add('active');
+            
+            window.scrollTo(0,0);
+        }
+
+        // --- 2. 모달(팝업) 상세 데이터 ---
+        const modalData = {
+            nationalAI: {
+                title: "국가 인공지능 행동계획 (2026~2028)",
+                body: `<p>정부(국가인공지능전략위원회)가 발표한 국가 차원의 핵심 전략입니다.</p>
+                       <ul class="list-disc pl-5 mt-2 space-y-1">
+                           <li><b>AI 고속도로 인프라 구축:</b> 컴퓨팅, 전력망 확보</li>
+                           <li><b>전 산업의 AI 대전환:</b> 농산업을 포함한 전 분야에 AI 적용하여 생산성 극대화</li>
+                           <li><b>전국민 AI 역량 확보:</b> 일상 및 업무에서의 AI 리터러시 강화</li>
+                       </ul>
+                       <div class="bg-blue-50 p-3 rounded-lg mt-3 text-xs text-blue-800">
+                           💡 <b>나의 연결점:</b> 국가가 농산업 AI 전환을 추진함에 따라, 데이터를 다룰 줄 아는 스마트 축산 전문가의 수요가 급증할 것입니다. 학과 전공 지식과 코딩/AI 역량을 결합하는 것이 핵심입니다.
+                       </div>`
             },
-            2: {
-                skills: [55, 40, 45, 30, 50],
-                courses: [
-                    { title: "전공: 가축생리학 & 번식학", desc: "정밀 사양 관리를 위한 가축의 신체/대사 메커니즘 심화" },
-                    { title: "AX: 스마트 ICT 기기 제어", desc: "환경 제어 센서(온습도) 원리 이해 및 아두이노 데이터 수집" },
-                    { title: "자격증: 빅데이터분석기사", d: "데이터 전처리 및 기초 통계 역량 확보를 위한 필기 준비" }
-                ]
+            curriculumDetail: {
+                title: "축산생명학과 졸업 요건 분석",
+                body: `<div class="space-y-3">
+                           <p><b>총 졸업 소요 학점: 130학점</b></p>
+                           <div class="bg-gray-50 p-3 rounded border border-gray-200">
+                               <p class="font-bold text-primary mb-1">1. 전공과정 (최소 42학점)</p>
+                               <ul class="list-disc pl-4 text-xs">
+                                   <li>전공필수: 동물영양학, 가축육종학 등 핵심 과목</li>
+                                   <li>전공선택: 관심 분야(스마트팜 등) 심화 수강</li>
+                               </ul>
+                           </div>
+                           <div class="bg-gray-50 p-3 rounded border border-gray-200">
+                               <p class="font-bold text-secondary mb-1">2. 교양과정</p>
+                               <ul class="list-disc pl-4 text-xs">
+                                   <li><b>필수교양 (6학점):</b> 대학영어1(2학점), 대학영어2(2학점) 포함</li>
+                                   <li>역량교양, 통합교양, 개척교양 등 학교 지침에 맞춰 분배 이수</li>
+                               </ul>
+                           </div>
+                       </div>`
             },
-            3: {
-                skills: [80, 70, 75, 60, 80],
-                courses: [
-                    { title: "전공: 가축영양학 & 사료학", desc: "개체별 데이터를 바탕으로 한 최적 영양소 설계 및 급이 모델" },
-                    { title: "AX: 머신러닝 & 질병 예찰", desc: "수집된 행동/체온 데이터를 활용한 이상 징후 감지 AI 모델링" },
-                    { title: "현장: 스마트 축산 캡스톤", desc: "실제 농가의 문제를 해결하는 팀 단위 문제해결형 프로젝트" }
-                ]
+            eduInfo: {
+                title: "교직과정 이수 세부 가이드",
+                body: `<p>학과 교육과정(교직과목 일람표)에 명시된 교원 자격증 취득 필수 요건입니다.</p>
+                       <div class="mt-3 space-y-2">
+                           <p><b>📚 교직이론 (12학점 이상 필수)</b></p>
+                           <ul class="list-disc pl-5 text-xs bg-gray-50 p-2 rounded">
+                               <li>1학년: 교육학개론</li>
+                               <li>2학년: 교육심리, 교육사회</li>
+                               <li>3/4학년: 교육과정 및 교육평가, 교육방법 및 교육공학 등</li>
+                           </ul>
+                           <p class="mt-2"><b>🏫 교육실습 (4학점 이상 필수)</b></p>
+                           <ul class="list-disc pl-5 text-xs bg-gray-50 p-2 rounded">
+                               <li>학교현장실습 (2학점 이상)</li>
+                               <li>교육봉사활동 (2학점 이내)</li>
+                           </ul>
+                       </div>
+                       <p class="text-xs text-red-500 mt-3 font-bold">* 중요: 교직 학점도 총 졸업 130학점 요건에 포함하여 치밀하게 수강 계획을 짜야 합니다.</p>`
             },
-            4: {
-                skills: [95, 90, 95, 90, 95],
-                courses: [
-                    { title: "전공: 축산경영학", desc: "데이터 기반 농장 생산성 예측 및 경제성 분석 시뮬레이션" },
-                    { title: "창업: 비즈니스 모델(BM) 구축", desc: "AX-Navigator 아이템 구체화 및 창업 지원사업계획서 작성" },
-                    { title: "졸업: AX 통합 관제 솔루션", desc: "4년간의 역량을 집약한 모바일 기반 농장 관리 대시보드 개발" }
-                ]
+            smartFarm: {
+                title: "스마트 축산 데이터 활용 방안",
+                body: `<p>막연한 AI 학습이 아닌, 실제 축산 데이터를 만져보는 것이 중요합니다.</p>
+                       <ol class="list-decimal pl-5 mt-2 space-y-2 text-xs">
+                           <li><b>데이터 소스 찾기:</b> 공공데이터포털(data.go.kr), 농사로(nongsaro.go.kr) 등에서 '축사 환경', '가축 질병' 키워드로 검색합니다.</li>
+                           <li><b>데이터 다운로드:</b> 엑셀(CSV) 형태의 데이터를 확보합니다.</li>
+                           <li><b>파이썬 분석:</b> 1학년 '컴퓨팅사고와 코딩' 시간에 배운 기초 파이썬 코드를 활용해 엑셀 데이터를 불러오고 그래프로 그려보는 연습을 시작합니다.</li>
+                       </ol>`
+            },
+            aiPractice: {
+                title: "전공 속 AI 연계 방안",
+                body: `전공 지식만으로는 부족합니다. 각 학년별 전공 과목에 AI 개념을 접목하세요.
+                       <ul class="list-disc pl-5 mt-3 space-y-2 text-xs">
+                           <li><b>동물영양학 + AI:</b> 가축의 체중 변화 데이터를 AI 모델에 넣어 최적의 사료 급여량 산출해보기</li>
+                           <li><b>축사환경제어 + AI:</b> 온도/습도/암모니아 센서 데이터를 실시간 분석하여 환풍기를 자동 제어하는 알고리즘 구상하기</li>
+                           <li><b>가축질병학 + AI:</b> 돼지의 기침 소리나 소의 활동량 변화 데이터를 분석해 질병(구제역 등)을 조기 탐지하는 비전/음성 AI 적용 사례 스터디</li>
+                       </ul>`
             }
         };
 
-        // 전역 차트 객체
-        let radarChart = null;
-        let streamChart = null;
-        let isEmergency = false; // 실무 진단 상태
+        const modal = document.getElementById('customModal');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalBody = document.getElementById('modalBody');
 
-        // ==========================================
-        // 2. 초기화 (DOM 로드 후 실행)
-        // ==========================================
-        document.addEventListener('DOMContentLoaded', () => {
-            initRadarChart();
-            initStreamChart();
-            updateYear(1); // 1학년 기본 표시
-        });
-
-        // ==========================================
-        // 3. UI 조작 로직 (탭 & 학년 전환)
-        // ==========================================
-        function changeTab(tabId) {
-            // 버튼 상태 변경
-            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active', 'bg-[#004ea2]', 'text-white'));
-            document.querySelectorAll('.nav-btn i').forEach(icon => icon.classList.remove('text-white'));
-            
-            const activeBtn = document.getElementById('btn-' + tabId);
-            activeBtn.classList.add('active');
-            activeBtn.querySelector('i').classList.add('text-white');
-
-            // 콘텐츠 전환
-            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-            document.getElementById('tab-' + tabId).classList.add('active');
-        }
-
-        function updateYear(year) {
-            // 버튼 스타일 업데이트
-            document.querySelectorAll('.year-btn').forEach(btn => {
-                btn.classList.remove('border-blue-600', 'shadow-md');
-                btn.classList.add('border-slate-200');
-                btn.querySelectorAll('span')[0].classList.replace('text-blue-600', 'text-slate-400');
-                btn.querySelectorAll('span')[1].classList.replace('text-slate-900', 'text-slate-500');
-            });
-            
-            const activeBtn = document.getElementById('year-btn-' + year);
-            activeBtn.classList.add('border-blue-600', 'shadow-md');
-            activeBtn.classList.remove('border-slate-200');
-            activeBtn.querySelectorAll('span')[0].classList.replace('text-slate-400', 'text-blue-600');
-            activeBtn.querySelectorAll('span')[1].classList.replace('text-slate-500', 'text-slate-900');
-
-            // 커리큘럼 리스트 업데이트
-            const listContainer = document.getElementById('course-list');
-            listContainer.innerHTML = '';
-            roadmapData[year].courses.forEach(course => {
-                listContainer.innerHTML += `
-                    <div class="relative mb-5 last:mb-0">
-                        <div class="absolute -left-[31px] top-1 w-3 h-3 bg-white border-2 border-blue-600 rounded-full"></div>
-                        <h4 class="font-bold text-slate-800 text-sm md:text-base">${course.title}</h4>
-                        <p class="text-xs text-slate-500 mt-1">${course.desc || course.d}</p>
-                    </div>
-                `;
-            });
-
-            // 레이더 차트 데이터 업데이트
-            if (radarChart) {
-                radarChart.data.datasets[0].data = roadmapData[year].skills;
-                radarChart.update();
+        function openModal(dataType) {
+            const data = modalData[dataType];
+            if(data) {
+                // 아이콘 유지를 위해 기존 HTML 보존 후 텍스트만 교체
+                modalTitle.innerHTML = `<i class="fa-solid fa-circle-info text-sm mr-2 text-primary"></i> ${data.title}`;
+                modalBody.innerHTML = data.body;
+                modal.classList.add('active');
             }
         }
 
-        // ==========================================
-        // 4. 차트 생성 및 구동 로직
-        // ==========================================
-        function initRadarChart() {
-            const ctx = document.getElementById('radarChart').getContext('2d');
-            Chart.defaults.font.family = "'Noto Sans KR', sans-serif";
-            
-            radarChart = new Chart(ctx, {
-                type: 'radar',
-                data: {
-                    labels: ['전공이해도', 'AI/코딩', '데이터해석', '경영전략', '실습숙련도'],
-                    datasets: [{
-                        label: '역량 지수',
-                        data: roadmapData[1].skills,
-                        backgroundColor: 'rgba(0, 78, 162, 0.2)',
-                        borderColor: '#004ea2',
-                        borderWidth: 2,
-                        pointBackgroundColor: '#004ea2',
-                        pointBorderColor: '#fff',
-                        pointHoverBackgroundColor: '#fff',
-                        pointHoverBorderColor: '#004ea2'
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        r: {
-                            angleLines: { color: 'rgba(0, 0, 0, 0.05)' },
-                            grid: { color: 'rgba(0, 0, 0, 0.05)' },
-                            pointLabels: { font: { size: 12, weight: 'bold' }, color: '#475569' },
-                            ticks: { display: false, min: 0, max: 100 }
-                        }
-                    },
-                    plugins: { legend: { display: false } }
-                }
-            });
+        function closeModal(event, force = false) {
+            if(force || event.target === modal) {
+                modal.classList.remove('active');
+            }
         }
 
-        function initStreamChart() {
-            const ctx = document.getElementById('streamChart').getContext('2d');
-            
-            streamChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: Array.from({length: 20}, (_, i) => i + 's'),
-                    datasets: [{
-                        label: '온도 (°C)',
-                        data: Array.from({length: 20}, () => 38.5),
-                        borderColor: '#004ea2',
-                        backgroundColor: 'rgba(0, 78, 162, 0.1)',
-                        borderWidth: 3,
-                        tension: 0.4,
-                        fill: true,
-                        pointRadius: 0, // 점 숨기기
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    animation: { duration: 0 }, // 부드러운 스트리밍을 위해 애니메이션 제거
-                    scales: {
-                        y: { min: 37, max: 41, grid: { color: 'rgba(0,0,0,0.05)' } },
-                        x: { display: false } // X축 숨기기
-                    },
-                    plugins: { legend: { display: false } }
-                }
-            });
+        // --- 3. 체크리스트 (로컬스토리지 연동) 로직 ---
+        let tasks = JSON.parse(localStorage.getItem('gnuAiTasksMobile3')) || [
+            { text: "대학영어 1주차 단어 20개 암기", completed: false },
+            { text: "농사로 포털에서 축산 관련 자료 1개 찾아보기", completed: false }
+        ];
 
-            // 1초 단위로 데이터 스트리밍 시뮬레이션
-            setInterval(() => {
-                if(!streamChart) return;
-                const data = streamChart.data.datasets[0].data;
-                data.shift(); // 첫 번째 값 제거
+        const todoList = document.getElementById('todoList');
+        const taskInput = document.getElementById('taskInput');
+        const emptyState = document.getElementById('emptyState');
+
+        function renderTasks() {
+            todoList.innerHTML = '';
+            if (tasks.length === 0) {
+                emptyState.classList.remove('hidden');
+                emptyState.classList.add('flex');
+            } else {
+                emptyState.classList.add('hidden');
+                emptyState.classList.remove('flex');
                 
-                const baseTemp = isEmergency ? 40.2 : 38.5; // 베이스 온도
-                const noise = (Math.random() * 0.4) - 0.2; // 약간의 노이즈 추가
-                
-                data.push(baseTemp + noise); // 새 값 추가
-                streamChart.update();
+                tasks.forEach((task, index) => {
+                    const li = document.createElement('li');
+                    li.className = `todo-item bg-white p-4 rounded-xl border ${task.completed ? 'border-gray-100 bg-gray-50' : 'border-gray-200 shadow-sm'} flex items-center justify-between transition-all`;
+                    
+                    // 삭제 버튼 클릭 시 confirm창 띄우지 않고 바로 삭제되게 하여 오류 방지
+                    li.innerHTML = `
+                        <label class="flex items-center gap-3 cursor-pointer flex-grow overflow-hidden pr-2">
+                            <input type="checkbox" ${task.completed ? 'checked' : ''} onchange="toggleTask(${index})">
+                            <span class="task-text text-sm text-gray-700 truncate ${task.completed ? 'text-gray-400' : ''}">${task.text.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</span>
+                        </label>
+                        <button onclick="deleteTask(${index}); event.preventDefault();" class="text-gray-300 hover:text-red-500 hover:bg-red-50 p-2 rounded-lg transition">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    `;
+                    todoList.appendChild(li);
+                });
+            }
+            localStorage.setItem('gnuAiTasksMobile3', JSON.stringify(tasks));
+        }
+
+        function addTask() {
+            const text = taskInput.value.trim();
+            if (text) {
+                tasks.unshift({ text: text, completed: false });
+                taskInput.value = '';
+                renderTasks();
+            } else {
+                // 입력창 흔들림 효과 (비어있을 때)
+                taskInput.classList.add('animate-pulse', 'border-red-500');
+                setTimeout(() => taskInput.classList.remove('animate-pulse', 'border-red-500'), 500);
+            }
+        }
+        
+        function addQuickTask(text) {
+            tasks.unshift({ text: text, completed: false });
+            renderTasks();
+            
+            const btn = event.target;
+            const originalText = btn.innerText;
+            btn.innerText = "✓ 추가됨";
+            btn.classList.add('bg-green-100', 'text-green-700');
+            setTimeout(() => {
+                btn.innerText = originalText;
+                btn.classList.remove('bg-green-100', 'text-green-700');
             }, 1000);
         }
 
-        function analyzeHealth() {
-            const tempVal = parseFloat(document.getElementById('temp-input').value);
-            const card = document.getElementById('status-card');
-            const icon = document.getElementById('status-icon');
-            const title = document.getElementById('status-title');
-            const desc = document.getElementById('status-desc');
-
-            if (tempVal >= 39.5) {
-                // 이상 상태
-                isEmergency = true;
-                if(streamChart) streamChart.data.datasets[0].borderColor = '#e11d48'; // 빨간색
-                if(streamChart) streamChart.data.datasets[0].backgroundColor = 'rgba(225, 29, 72, 0.1)';
-                
-                card.className = "flex-1 bg-rose-900 rounded-3xl p-6 md:p-8 text-center text-white flex flex-col justify-center items-center transition-all duration-300 border-2 border-rose-500 shadow-xl scale-105 md:scale-100";
-                icon.className = "fa-solid fa-triangle-exclamation text-5xl text-rose-400 mb-4 animate-bounce";
-                title.className = "text-2xl font-black text-rose-400 mb-2";
-                title.innerText = "주의 (경고)";
-                desc.innerText = "입력된 온도가 임계치를 초과했습니다! 축사 환기 시스템을 점검하고 개체의 상태를 즉시 확인하세요.";
-            } else {
-                // 정상 상태
-                isEmergency = false;
-                if(streamChart) streamChart.data.datasets[0].borderColor = '#004ea2'; // 파란색
-                if(streamChart) streamChart.data.datasets[0].backgroundColor = 'rgba(0, 78, 162, 0.1)';
-                
-                card.className = "flex-1 bg-slate-800 rounded-3xl p-6 md:p-8 text-center text-white flex flex-col justify-center items-center transition-all duration-300";
-                icon.className = "fa-solid fa-circle-check text-5xl text-emerald-400 mb-4";
-                title.className = "text-2xl font-black text-emerald-400 mb-2";
-                title.innerText = "정상 상태";
-                desc.innerText = "현재 입력된 데이터는 가축의 정상 대사 범위 내에 있습니다.";
-            }
+        function toggleTask(index) {
+            tasks[index].completed = !tasks[index].completed;
+            renderTasks();
         }
+
+        // 모바일 오류 원인이던 confirm() 함수를 제거하여 원터치로 부드럽게 삭제되도록 수정
+        function deleteTask(index) {
+            tasks.splice(index, 1);
+            renderTasks();
+        }
+
+        // 스크롤바 숨기기 (Tailwind 유틸리티 추가)
+        document.head.insertAdjacentHTML("beforeend", `<style>.scrollbar-hide::-webkit-scrollbar { display: none; } .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }</style>`);
+
+        // 초기 렌더링
+        renderTasks();
     </script>
 </body>
 </html>
